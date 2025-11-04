@@ -287,14 +287,4 @@ function checkCode() {
   const result = document.getElementById("result");
 
   if (android[date] && android[date][hour] === code) {
-    result.innerHTML = "✅ Android Sensi Pack Code Correct!";
-  } else if (ios[date] && ios[date][hour] === code) {
-    result.innerHTML = "✅ iOS Sensi Pack Code Correct!";
-  } else {
-    result.innerHTML = "❌ BKL Sahi Code Daal ⚠️";
-  }
-}
-</script>
-
-</body>
-</html>
+    result.innerHTML 
